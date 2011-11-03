@@ -34,6 +34,13 @@ function bodhy_drush_command() {
     'aliases' => array('fn'),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
   );
+  
+  $items['generate-password'] = array(
+    'description' => "fff",
+    'arguments' => array('user' => 'user name'),
+    'aliases' => array('genpass'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
+  );
 
   return $items;
 }
@@ -59,6 +66,7 @@ function drush_bodhy_update_node($nid, $filename) {
   $node->body = $content;
 
   node_save($node);
+  
 }
 
 function drush_bodhy_enable_security_email_notifications($email) {
@@ -73,10 +81,7 @@ function drush_bodhy_enable_security_email_notifications($email) {
     drush_log("can't parse email", 'error');
 }
 
-function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacement) {
-  $nodes = array();
-  
-
+function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacement) { 
   // Цикл перепобра всех нод
   if ($nid=='all'){
   $results = db_query('SELECT nid FROM {node}');
@@ -88,7 +93,7 @@ function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacem
   } else {  
     $node = node_load($nid);
     
-      if (!preg_match("/^[0-9]+$/", $nid)) {
+    if (!preg_match("/^[0-9]+$/", $nid)) {
       echo "nid must be a number \n";
       exit(1);
     }
@@ -99,7 +104,27 @@ function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacem
     }
     
     $node->body['und']['0']['value'] =ereg_replace($pattern,$replacement,$node->body['und']['0']['value']);
-    node_save($node);
+    node_save($node);  
+    }
+}
+
+function drush_bodhy_generate_password($user){
+  $results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$user));
+  $edit = array();
   
-  }
+  $edit['name'] = $user;
+  $edit['pass'] = gen_passwd();    
+  
+  $account = $results->fetchObject();
+  $account = user_load($account->uid);
+  user_save($account, $edit);
+  
+  echo ("login: " . $account->name . "\n");
+  echo ("password: " . $edit['pass'] . "\n");
+}
+
+
+
+function gen_passwd() {
+ return trim(shell_exec("apg -x 6 -n 1"));
 }
