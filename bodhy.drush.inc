@@ -37,7 +37,10 @@ function bodhy_drush_command() {
   
   $items['generate-password'] = array(
     'description' => "fff",
-    'arguments' => array('user' => 'user name'),
+    'arguments' => array(
+      'user' => 'all or user',
+      'user_name' =>'user name',
+    ),
     'aliases' => array('genpass'),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
   );
@@ -91,12 +94,13 @@ function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacem
       node_save($node);
     }
   } else {  
-    $node = node_load($nid);
     
     if (!preg_match("/^[0-9]+$/", $nid)) {
       echo "nid must be a number \n";
       exit(1);
     }
+    
+    $node = node_load($nid);
 
     if (empty($node)) {
       echo "can't load nid=" . $nid . "\n";
@@ -108,22 +112,43 @@ function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacem
     }
 }
 
-function drush_bodhy_generate_password($user){
-  $results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$user));
+function drush_bodhy_generate_password($user, $user_name=""){
+  
   $edit = array();
+  if ($user=='all'){    
+    $results=db_query('SELECT uid FROM {users} WHERE uid!=0');
+    
+      while ( $result = $results->fetchObject()){
+        $account = user_load($result->uid);
+        $edit['name'] = $account->name;
+        $edit['pass'] = gen_passwd();
+        user_save($account, $edit);
+        
+        echo ("login: " . $account->name . "\n");
+        echo ("password: " . $edit['pass'] . "\n");
+        echo ("\n");
+      }  
   
-  $edit['name'] = $user;
-  $edit['pass'] = gen_passwd();    
+  } elseif($user=='user' && $user_name!=""){
+      $results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$user_name));  
+      $edit['name'] = $user_name;
+      $edit['pass'] = gen_passwd();    
   
-  $account = $results->fetchObject();
-  $account = user_load($account->uid);
-  user_save($account, $edit);
+      $account = $results->fetchObject();
+      
+        if (empty($account)) {
+          echo "can't load account=" . $user_name . "\n";
+          exit(1);
+        }
+
+      $account = user_load($account->uid);
+              
+      user_save($account, $edit);
   
-  echo ("login: " . $account->name . "\n");
-  echo ("password: " . $edit['pass'] . "\n");
+      echo ("login: " . $account->name . "\n");
+      echo ("password: " . $edit['pass'] . "\n");
+  } else echo "please specify a user name";
 }
-
-
 
 function gen_passwd() {
  return trim(shell_exec("apg -x 6 -n 1"));
