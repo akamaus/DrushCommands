@@ -23,6 +23,17 @@ function bodhy_drush_command() {
     'aliases' => array('eesn'),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
   );
+  
+  $items['filter-nodes'] = array(
+    'description' => "filters all nodes bodies replacing strings matching a given regexp",
+    'arguments' => array(
+      'nid' => 'number nid',
+      'pattern' => 'regular expression',
+      'replacement' => 'string replacement',
+    ),
+    'aliases' => array('fn'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
+  );
 
   return $items;
 }
@@ -60,4 +71,35 @@ function drush_bodhy_enable_security_email_notifications($email) {
     drush_log("email notifications enabled", 'ok');
   } else
     drush_log("can't parse email", 'error');
+}
+
+function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacement) {
+  $nodes = array();
+  
+
+  // Цикл перепобра всех нод
+  if ($nid=='all'){
+  $results = db_query('SELECT nid FROM {node}');
+    while ($result=$results->fetchObject()){
+      $node = node_load($result->nid);
+      $node->body['und']['0']['value'] =ereg_replace($pattern,$replacement,$node->body['und']['0']['value']);
+      node_save($node);
+    }
+  } else {  
+    $node = node_load($nid);
+    
+      if (!preg_match("/^[0-9]+$/", $nid)) {
+      echo "nid must be a number \n";
+      exit(1);
+    }
+
+    if (empty($node)) {
+      echo "can't load nid=" . $nid . "\n";
+      exit(2);
+    }
+    
+    $node->body['und']['0']['value'] =ereg_replace($pattern,$replacement,$node->body['und']['0']['value']);
+    node_save($node);
+  
+  }
 }
