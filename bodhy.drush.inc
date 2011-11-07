@@ -36,12 +36,32 @@ function bodhy_drush_command() {
   );
   
   $items['generate-password'] = array(
-    'description' => "fff",
+    'description' => "Generate user password",
     'arguments' => array(
       'user' => 'all or user',
       'user_name' =>'user name',
     ),
     'aliases' => array('genpass'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
+  );
+  
+  $items['rename-user'] = array(
+    'description' => "rename user",
+    'arguments' => array(
+      'userName' => 'Old user name',
+      'newUserName' =>'New user name',
+    ),
+    'aliases' => array('rename-user'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
+  );
+  
+  $items['rename-uid'] = array(
+    'description' => "rename user name",
+    'arguments' => array(
+      'userUid' => 'number uid',
+      'newUserName' =>'New user name',
+    ),
+    'aliases' => array('rename-uid'),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
   );
 
@@ -85,7 +105,7 @@ function drush_bodhy_enable_security_email_notifications($email) {
 }
 
 function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacement) { 
-  // Цикл перепобра всех нод
+  // Цикл перебора всех нод
   if ($nid=='all'){
   $results = db_query('SELECT nid FROM {node}');
     while ($result=$results->fetchObject()){
@@ -115,6 +135,8 @@ function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacem
 function drush_bodhy_generate_password($user, $user_name=""){
   
   $edit = array();
+  
+  //Смена пароля у всех юзеров
   if ($user=='all'){    
     $results=db_query('SELECT uid FROM {users} WHERE uid!=0');
     
@@ -128,7 +150,7 @@ function drush_bodhy_generate_password($user, $user_name=""){
         echo ("password: " . $edit['pass'] . "\n");
         echo ("\n");
       }  
-  
+      
   } elseif($user=='user' && $user_name!=""){
       $results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$user_name));  
       $edit['name'] = $user_name;
@@ -141,15 +163,90 @@ function drush_bodhy_generate_password($user, $user_name=""){
           exit(1);
         }
 
-      $account = user_load($account->uid);
-              
+      $account = user_load($account->uid);           
       user_save($account, $edit);
   
       echo ("login: " . $account->name . "\n");
       echo ("password: " . $edit['pass'] . "\n");
-  } else echo "please specify a user name";
+  } else echo "please specify a user name \n";
 }
 
+function drush_bodhy_rename_user($userName="", $newUserName=""){
+  
+  if ($userName=="" || $newUserName==""){
+    echo "please specify the user name and the new user name \n";
+    exit(1);
+  }
+ 
+  $edit = array();
+  
+  // Проверяем не повторяется ли новое имя
+  $results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$newUserName));
+  
+  $account = $results->fetchObject();
+      
+    if (!empty($account)) {
+      echo "New name exists \n";
+      exit(2);
+    }
+  
+  $results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$userName));
+   
+  $account = $results->fetchObject();
+      
+    if (empty($account)) {
+      echo "can't load account=" . $userName . "\n";
+      exit(3);
+    }
+  
+    if (!preg_match("/^[-_a-zA-Zа-яА-Я0-9]+$/", $newUserName)) {
+      echo "New user name is invalid \n";
+      exit(4);
+    }
+
+  $edit['name'] = $newUserName;
+    
+  $account = user_load($account->uid);           
+  user_save($account, $edit);
+}
+
+function drush_bodhy_rename_uid($userUid="", $newUserName=""){
+
+  if ($userUid=="" || $newUserName==""){
+    echo "please specify the uid and the new user name \n";
+    exit(1);
+  }
+ 
+  $edit = array();
+  
+  // Проверяем не повторяется ли новое имя
+  $results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$newUserName));
+  
+  $account = $results->fetchObject();
+      
+    if (!empty($account)) {
+      echo "Name exists \n";
+      exit(2);
+    }
+
+  $edit['name'] = $newUserName;
+  $account = user_load($userUid);
+
+    if (empty($account)) {
+      echo "can't load account uid=" . $userUid . "\n";
+      exit(3);
+    }
+    
+    if (!preg_match("/^[-_a-zA-Zа-яА-Я0-9]+$/", $newUserName)) {
+      echo "New user name is invalid \n";
+      exit(4);
+    }
+    
+  user_save($account, $edit);
+    
+}
+
+// Генерация пароля
 function gen_passwd() {
  return trim(shell_exec("apg -x 6 -n 1"));
 }
