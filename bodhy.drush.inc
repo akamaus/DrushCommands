@@ -27,7 +27,7 @@ function bodhy_drush_command() {
   $items['filter-nodes'] = array(
     'description' => "filters all nodes bodies replacing strings matching a given regexp",
     'arguments' => array(
-      'nid' => 'number nid',
+      'nid' => 'number nid or all',
       'pattern' => 'regular expression',
       'replacement' => 'string replacement',
     ),
@@ -46,12 +46,11 @@ function bodhy_drush_command() {
   );
   
   $items['rename-user'] = array(
-    'description' => "rename user",
+    'description' => "rename user name",
     'arguments' => array(
       'userName' => 'Old user name',
       'newUserName' =>'New user name',
     ),
-    'aliases' => array('rename-user'),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
   );
   
@@ -61,7 +60,14 @@ function bodhy_drush_command() {
       'userUid' => 'number uid',
       'newUserName' =>'New user name',
     ),
-    'aliases' => array('rename-uid'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
+  );
+  
+  $items['search-nodes'] = array(
+    'description' => "search entry regexps in the body nodes",
+    'arguments' => array(
+      'pattern' => 'regular expression',
+    ),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
   );
 
@@ -110,8 +116,11 @@ function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacem
   $results = db_query('SELECT nid FROM {node}');
     while ($result=$results->fetchObject()){
       $node = node_load($result->nid);
-      $node->body['und']['0']['value'] =ereg_replace($pattern,$replacement,$node->body['und']['0']['value']);
-      node_save($node);
+        if(ereg($pattern, $node->body['und']['0']['value'])) {
+          echo ("/node/" . $result->nid . "\n");
+          $node->body['und']['0']['value'] =ereg_replace($pattern,$replacement,$node->body['und']['0']['value']);
+          node_save($node);
+        } 
     }
   } else {  
     
@@ -245,6 +254,22 @@ function drush_bodhy_rename_uid($userUid="", $newUserName=""){
   user_save($account, $edit);
     
 }
+
+function drush_bodhy_search_nodes(string $pattern){  
+  
+  if ($pattern=="") {
+    echo "please specify the regexp \n";
+    exit(1);  
+  }
+  
+  $results = db_query('SELECT nid FROM {node}');
+  while ($result=$results->fetchObject()){
+    $node = node_load($result->nid);
+    if(ereg($pattern, $node->body['und']['0']['value']))
+      echo ("/node/" . $result->nid . "\n");
+  }
+  
+} 
 
 // Генерация пароля
 function gen_passwd() {
