@@ -265,8 +265,8 @@ function drush_bodhy_search_nodes(string $pattern){
     echo "please specify the regexp \n";
     exit(1);  
   }
-    
-  $results = db_query('SELECT * FROM {node}'); 
+     
+  $results = db_query('SELECT nid FROM {node}'); 
   while ($result=$results->fetchObject()){          
     $node = node_load($result->nid);
       if(ereg($pattern, $node->body['und']['0']['value'])){
