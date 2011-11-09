@@ -117,7 +117,11 @@ function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacem
     while ($result=$results->fetchObject()){
       $node = node_load($result->nid);
         if(ereg($pattern, $node->body['und']['0']['value'])) {
-          echo ("/node/" . $result->nid . "\n");
+          $str_node=("node/" . $result->nid);
+          $aliases = db_query('Select source, alias FROM url_alias WHERE source = :source', array(':source'=>$str_node));
+          $alias=$aliases->fetchObject();
+          echo ($str_node . " - ");
+          echo ($alias->alias . "\n");
           $node->body['und']['0']['value'] =ereg_replace($pattern,$replacement,$node->body['und']['0']['value']);
           node_save($node);
         } 
@@ -261,12 +265,18 @@ function drush_bodhy_search_nodes(string $pattern){
     echo "please specify the regexp \n";
     exit(1);  
   }
-  
-  $results = db_query('SELECT nid FROM {node}');
-  while ($result=$results->fetchObject()){
+    
+  $results = db_query('SELECT * FROM {node}'); 
+  while ($result=$results->fetchObject()){          
     $node = node_load($result->nid);
-    if(ereg($pattern, $node->body['und']['0']['value']))
-      echo ("/node/" . $result->nid . "\n");
+      if(ereg($pattern, $node->body['und']['0']['value'])){
+        $str_node=("node/" . $result->nid);
+        $aliases = db_query('Select source, alias FROM url_alias WHERE source = :source', array(':source'=>$str_node));
+        $alias=$aliases->fetchObject();
+        echo ($str_node . " - ");
+        echo ($alias->alias . "\n");
+      }
+
   }
   
 } 
