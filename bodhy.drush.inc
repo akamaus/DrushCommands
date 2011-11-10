@@ -112,6 +112,11 @@ function drush_bodhy_enable_security_email_notifications($email) {
 
 function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacement) { 
   // Цикл перебора всех нод
+  if (drush_drupal_major_version() < 7) {
+    echo ("only works in Drupal 7 \n");
+    exit(1);
+  }
+  
   if ($nid=='all'){
   $results = db_query('SELECT nid FROM {node}');
     while ($result=drush_db_fetch_object($results)){
@@ -130,14 +135,14 @@ function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacem
     
     if (!preg_match("/^[0-9]+$/", $nid)) {
       echo "nid must be a number \n";
-      exit(1);
+      exit(2);
     }
     
     $node = node_load($nid);
 
     if (empty($node)) {
       echo "can't load nid=" . $nid . "\n";
-      exit(2);
+      exit(3);
     }
     
     $node->body['und']['0']['value'] =ereg_replace($pattern,$replacement,$node->body['und']['0']['value']);
@@ -174,7 +179,7 @@ function drush_bodhy_generate_password($user, $user_name=""){
       
         if (empty($account)) {
           echo "can't load account=" . $user_name . "\n";
-          exit(1);
+          exit(4);
         }
 
       $account = user_load($account->uid);           
@@ -267,10 +272,15 @@ function drush_bodhy_rename_uid($userUid="", $newUserName=""){
 }
 
 function drush_bodhy_search_nodes(string $pattern){  
+
+  if (drush_drupal_major_version() < 7) {
+    echo ("only works in Drupal 7 \n");
+    exit(1);
+  }
   
   if ($pattern=="") {
     echo "please specify the regexp \n";
-    exit(1);  
+    exit(2);  
   }
      
   $results = db_query('SELECT nid FROM {node}'); 
