@@ -114,12 +114,12 @@ function drush_bodhy_filter_nodes(string $nid, string $pattern, string $replacem
   // Цикл перебора всех нод
   if ($nid=='all'){
   $results = db_query('SELECT nid FROM {node}');
-    while ($result=$results->fetchObject()){
+    while ($result=drush_db_fetch_object($results)){
       $node = node_load($result->nid);
         if(ereg($pattern, $node->body['und']['0']['value'])) {
           $str_node=("node/" . $result->nid);
-          $aliases = db_query('Select source, alias FROM url_alias WHERE source = :source', array(':source'=>$str_node));
-          $alias=$aliases->fetchObject();
+          $aliases = db_query('Select source, alias FROM url_alias WHERE source = :source', array(':source'=>$str_node));       
+          $alias=drush_db_fetch_object($aliases);
           echo ($str_node . " - ");
           echo ($alias->alias . "\n");
           $node->body['und']['0']['value'] =ereg_replace($pattern,$replacement,$node->body['und']['0']['value']);
@@ -153,7 +153,7 @@ function drush_bodhy_generate_password($user, $user_name=""){
   if ($user=='all'){    
     $results=db_query('SELECT uid FROM {users} WHERE uid!=0');
     
-      while ( $result = $results->fetchObject()){
+      while ( $result = drush_db_fetch_object($results)){
         $account = user_load($result->uid);
         $edit['name'] = $account->name;
         $edit['pass'] = gen_passwd();
@@ -165,11 +165,12 @@ function drush_bodhy_generate_password($user, $user_name=""){
       }  
       
   } elseif($user=='user' && $user_name!=""){
-      $results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$user_name));  
+      //$results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$user_name));  
+      $results=drush_db_select('users', 'uid', 'name IN (:name)', array(':name'=>$user_name) );
       $edit['name'] = $user_name;
       $edit['pass'] = gen_passwd();    
   
-      $account = $results->fetchObject();
+      $account = drush_db_fetch_object($results);
       
         if (empty($account)) {
           echo "can't load account=" . $user_name . "\n";
@@ -194,18 +195,18 @@ function drush_bodhy_rename_user($userName="", $newUserName=""){
   $edit = array();
   
   // Проверяем не повторяется ли новое имя
-  $results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$newUserName));
-  
-  $account = $results->fetchObject();
+  // $results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$newUserName));
+  $results=drush_db_select('users', 'uid', 'name IN (:name)', array(':name'=>$newUserName) );
+  $account = drush_db_fetch_object($results);
       
     if (!empty($account)) {
       echo "New name exists \n";
       exit(2);
     }
   
-  $results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$userName));
-   
-  $account = $results->fetchObject();
+  //$results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$userName));
+  $results=drush_db_select('users', 'uid', 'name IN (:name)', array(':name'=>$userName) ); 
+  $account = drush_db_fetch_object($results);
       
     if (empty($account)) {
       echo "can't load account=" . $userName . "\n";
@@ -233,13 +234,19 @@ function drush_bodhy_rename_uid($userUid="", $newUserName=""){
   $edit = array();
   
   // Проверяем не повторяется ли новое имя
-  $results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$newUserName));
+  // $results=db_query('SELECT uid FROM {users} WHERE name = :name', array(':name'=>$newUserName));
+  $results=drush_db_select('users', 'uid', 'name IN (:name)', array(':name'=>$newUserName));
   
-  $account = $results->fetchObject();
-      
+  $account = drush_db_fetch_object($results);
+
+    if (!preg_match("/^[0-9]+$/", $userUid)) {
+      echo "uid must be a number \n";
+      exit(2);
+    }
+    
     if (!empty($account)) {
       echo "Name exists \n";
-      exit(2);
+      exit(3);
     }
 
   $edit['name'] = $newUserName;
@@ -247,12 +254,12 @@ function drush_bodhy_rename_uid($userUid="", $newUserName=""){
 
     if (empty($account)) {
       echo "can't load account uid=" . $userUid . "\n";
-      exit(3);
+      exit(4);
     }
     
     if (!preg_match("/^[-_a-zA-Zа-яА-Я0-9]+$/", $newUserName)) {
       echo "New user name is invalid \n";
-      exit(4);
+      exit(5);
     }
     
   user_save($account, $edit);
@@ -267,12 +274,12 @@ function drush_bodhy_search_nodes(string $pattern){
   }
      
   $results = db_query('SELECT nid FROM {node}'); 
-  while ($result=$results->fetchObject()){          
+  while ($result=drush_db_fetch_object($results)){          
     $node = node_load($result->nid);
       if(ereg($pattern, $node->body['und']['0']['value'])){
         $str_node=("node/" . $result->nid);
         $aliases = db_query('Select source, alias FROM url_alias WHERE source = :source', array(':source'=>$str_node));
-        $alias=$aliases->fetchObject();
+        $alias=drush_db_fetch_object($aliases);
         echo ($str_node . " - ");
         echo ($alias->alias . "\n");
       }
