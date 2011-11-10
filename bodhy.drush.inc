@@ -70,6 +70,17 @@ function bodhy_drush_command() {
     ),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
   );
+  
+  $items['enable-caching'] = array(
+    'description' => "enable caching, without compression",
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
+  );
+  
+  $items['disable-caching'] = array(
+    'description' => "disable caching",
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL
+  );
+  
 
   return $items;
 }
@@ -293,10 +304,24 @@ function drush_bodhy_search_nodes(string $pattern){
         echo ($str_node . " - ");
         echo ($alias->alias . "\n");
       }
+  }  
+}
 
-  }
-  
-} 
+function drush_bodhy_enable_caching() {
+  variable_set('cache', '1');
+  variable_set('block_cache', '1');
+  variable_set('preprocess_css', '1');
+  variable_set('preprocess_js', '1');
+  variable_set('page_compression', '0');
+}
+
+function drush_bodhy_disable_caching() {
+  variable_set('cache', '0');
+  variable_set('block_cache', '0');
+  variable_set('preprocess_css', '0');
+  variable_set('preprocess_js', '0');
+  variable_set('page_compression', '0');
+}
 
 // Генерация пароля
 function gen_passwd() {
