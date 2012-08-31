@@ -313,6 +313,8 @@ function drush_bodhy_enable_caching() {
   variable_set('preprocess_css', '1');
   variable_set('preprocess_js', '1');
   variable_set('page_compression', '0');
+
+  setup_prepro("cache");
 }
 
 function drush_bodhy_disable_caching() {
@@ -321,9 +323,21 @@ function drush_bodhy_disable_caching() {
   variable_set('preprocess_css', '0');
   variable_set('preprocess_js', '0');
   variable_set('page_compression', '0');
+
+  setup_prepro("onload");
 }
 
 // Генерация пароля
 function gen_passwd() {
  return trim(shell_exec("apg -x 6 -n 1"));
+}
+
+function setup_prepro($mode) {
+  $prepro = variable_get('prepro',null);
+  if ($prepro) {
+    $prepro['filetypes']['sass']['cache'] = $mode;
+    $prepro['filetypes']['scss']['cache'] = $mode;
+
+    variable_set('prepro', $prepro);
+  }
 }
