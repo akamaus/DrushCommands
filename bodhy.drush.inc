@@ -316,7 +316,10 @@ function drush_bodhy_enable_caching() {
   variable_set('preprocess_js', '1');
   variable_set('page_compression', '0');
 
-  setup_prepro("cache");
+  setup_prepro("prepro/cache");
+
+  drush_log(dt('caching related settings modified, cleaning caches'), 'success');
+  drush_cache_command_clear('all');
 }
 
 function drush_bodhy_disable_caching() {
@@ -326,7 +329,7 @@ function drush_bodhy_disable_caching() {
   variable_set('preprocess_js', '0');
   variable_set('page_compression', '0');
 
-  setup_prepro("onload");
+  setup_prepro("prepro/onload");
 }
 
 // Генерация пароля
