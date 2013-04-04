@@ -317,9 +317,6 @@ function drush_bodhy_enable_caching() {
   variable_set('page_compression', '0');
 
   setup_prepro("prepro/cache");
-
-  drush_log(dt('caching related settings modified, cleaning caches'), 'success');
-  drush_cache_command_clear('all');
 }
 
 function drush_bodhy_disable_caching() {
@@ -330,6 +327,9 @@ function drush_bodhy_disable_caching() {
   variable_set('page_compression', '0');
 
   setup_prepro("prepro/onload");
+
+  drush_log(dt('caching related settings modified, cleaning caches'), 'success');
+  drush_cache_command_clear('all');
 }
 
 // Генерация пароля
@@ -340,8 +340,8 @@ function gen_passwd() {
 function setup_prepro($mode) {
   $prepro = variable_get('prepro',null);
   if ($prepro) {
-    $prepro['filetypes']['sass']['cache'] = $mode;
-    $prepro['filetypes']['scss']['cache'] = $mode;
+    $prepro['filetypes']['sass']['cache_handler'] = $mode;
+    $prepro['filetypes']['scss']['cache_handler'] = $mode;
 
     variable_set('prepro', $prepro);
   }
